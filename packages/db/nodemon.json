@@ -1,0 +1,9 @@
+{
+  "watch": [
+    "src",
+    "tsconfig.json"
+  ],
+  "ext": ".ts,.js, .json",
+  "ignore": [],
+  "exec": "tsc -b"
+}

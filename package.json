@@ -4,7 +4,11 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint"
+    "lint": "turbo lint",
+    "db:migrate:dev": "yarn workspace @repo/db prisma generate && env-cmd -f '.env' yarn workspace @repo/db prisma db push",
+    "db:migrate:prod": "yarn workspace @repo/db prisma generate && env-cmd -f '.env' yarn workspace @repo/db prisma migrate deploy",
+    "db:migrate:revert": "env-cmd -f '.env' yarn workspace @repo/db prisma migrate reset --force",
+    "db:migrate:revert:all": "env-cmd -f '.env' yarn workspace @repo/db prisma migrate reset --force --skip-seed"
   },
   "devDependencies": {
     "env-cmd": "^10.1.0",
