@@ -1,92 +1,114 @@
-import MemStore from "../src";
+import MemStore, { redis } from "../src";
 import Redis from "ioredis";
 
-jest.mock("ioredis");
-
 describe("MemStore", () => {
+  let mockRedis: Redis;
+
   beforeAll(() => {
-    const mockRedisInstance = {
-      setex: jest.fn(),
-      set: jest.fn(),
-      get: jest.fn(),
-      del: jest.fn(),
-      keys: jest.fn(),
-      exists: jest.fn(),
-      flushall: jest.fn(),
-    };
-
-    (Redis as unknown as jest.Mock).mockImplementation(() => mockRedisInstance);
-
-    (MemStore as any).redis = mockRedisInstance;
+    mockRedis = redis;
   });
 
-  afterEach(() => {
-    jest.clearAllMocks();
+  afterAll(async () => {
+    await mockRedis.flushall();
+    await mockRedis.quit();
   });
 
-  it("should set a value with TTL", async () => {
-    const mockSetex = MemStore["redis"].setex as jest.Mock;
-    await MemStore.set({
-      key: "testKey",
-      value: JSON.stringify({ name: "John Doe" }),
-      ttl: 300,
+  it("should set and get a value without TTL", async () => {
+    const key = "testKey";
+    const value = "testValue";
+
+    const setResult = await MemStore.set({ key, value });
+    expect(setResult).toBe(true);
+
+    const getResult = await MemStore.get<string>(key);
+    expect(getResult).toBe(value);
+  });
+
+  it("should set and get a value with TTL in seconds", async () => {
+    const key = "testKeyWithTTL";
+    const value = "testValue";
+    const ttl = 10;
+
+    const setResult = await MemStore.set({
+      key,
+      value,
+      ttl,
+      expirationType: "EX",
     });
-    expect(mockSetex).toHaveBeenCalledWith(
-      "testKey",
-      300,
-      JSON.stringify({ name: "John Doe" }),
-    );
+    expect(setResult).toBe(true);
+
+    const getResult = await MemStore.get<string>(key);
+    expect(getResult).toBe(value);
+
+    const ttlResult = await mockRedis.ttl(key);
+    expect(ttlResult).toBeLessThanOrEqual(ttl);
+    expect(ttlResult).toBeGreaterThan(0);
   });
 
-  it("should set a value without TTL", async () => {
-    const mockSet = MemStore["redis"].set as jest.Mock;
-    await MemStore.set({ key: "testKeyNoTTL", value: "testValue" });
-    expect(mockSet).toHaveBeenCalledWith("testKeyNoTTL", "testValue");
-  });
+  it("should set and get a value with TTL in milliseconds", async () => {
+    const key = "testKeyWithTTLMillis";
+    const value = "testValue";
+    const ttl = 10000;
 
-  it("should get a value", async () => {
-    const mockGet = MemStore["redis"].get as jest.Mock;
-    mockGet.mockResolvedValue(JSON.stringify({ name: "Alice" }));
-    const result = await MemStore.get<{ name: string }>("testKey");
-    expect(result).toEqual({ name: "Alice" });
-  });
+    const setResult = await MemStore.set({
+      key,
+      value,
+      ttl,
+      expirationType: "PX",
+    });
+    expect(setResult).toBe(true);
 
-  it("should return null for a non-existent key", async () => {
-    const mockGet = MemStore["redis"].get as jest.Mock;
-    mockGet.mockResolvedValue(null);
-    const result = await MemStore.get("nonExistentKey");
-    expect(result).toBeNull();
+    const getResult = await MemStore.get<string>(key);
+    expect(getResult).toBe(value);
+
+    const pttlResult = await mockRedis.pttl(key);
+    expect(pttlResult).toBeLessThanOrEqual(ttl);
+    expect(pttlResult).toBeGreaterThan(0);
   });
 
   it("should delete a key", async () => {
-    const mockDel = MemStore["redis"].del as jest.Mock;
-    mockDel.mockResolvedValue(1);
-    const result = await MemStore.del("testKey");
-    expect(mockDel).toHaveBeenCalledWith("testKey");
-    expect(result).toBe(true);
+    const key = "testKeyToDelete";
+    const value = "testValue";
+
+    await MemStore.set({ key, value });
+    const deleteResult = await MemStore.del(key);
+    expect(deleteResult).toBe(true);
+
+    const getResult = await MemStore.get<string>(key);
+    expect(getResult).toBeNull();
+  });
+
+  it("should return all keys matching a pattern", async () => {
+    await MemStore.set({ key: "testKey1", value: "value1" });
+    await MemStore.set({ key: "testKey2", value: "value2" });
+
+    const keys = await MemStore.keys("testKey*");
+
+    expect(keys).toContain("testKey1");
+    expect(keys).toContain("testKey2");
   });
 
   it("should check if a key exists", async () => {
-    const mockExists = MemStore["redis"].exists as jest.Mock;
-    mockExists.mockResolvedValue(1);
-    const result = await MemStore.exists("testKey");
-    expect(mockExists).toHaveBeenCalledWith("testKey");
-    expect(result).toBe(true);
-  });
+    const key = "testKeyExists";
+    const value = "testValue";
 
-  it("should get all keys matching a pattern", async () => {
-    const mockKeys = MemStore["redis"].keys as jest.Mock;
-    mockKeys.mockResolvedValue(["key1", "key2"]);
-    const result = await MemStore.keys("key*");
-    expect(mockKeys).toHaveBeenCalledWith("key*");
-    expect(result).toEqual(["key1", "key2"]);
+    await MemStore.set({ key, value });
+    const exists = await MemStore.exists(key);
+    expect(exists).toBe(true);
+
+    const nonExistentKey = "nonExistentKey";
+    const nonExistent = await MemStore.exists(nonExistentKey);
+    expect(nonExistent).toBe(false);
   });
 
   it("should flush all keys", async () => {
-    const mockFlushAll = MemStore["redis"].flushall as jest.Mock;
-    mockFlushAll.mockResolvedValue("OK");
-    const result = await MemStore.flushAll();
-    expect(mockFlushAll).toHaveBeenCalled();
-    expect(result).toBe(true);
+    await MemStore.set({ key: "testKey1", value: "value1" });
+    await MemStore.set({ key: "testKey2", value: "value2" });
+
+    const flushResult = await MemStore.flushAll();
+    expect(flushResult).toBe(true);
+
+    const keys = await MemStore.keys();
+    expect(keys).toHaveLength(0);
   });
 });

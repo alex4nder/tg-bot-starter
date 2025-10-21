@@ -4,16 +4,19 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc -p tsconfig.build.json"
+    "build": "tsc"
   },
   "devDependencies": {
-    "@repo/eslint-config": "workspace:^",
+    "@eslint/js": "^9.19.0",
     "@repo/typescript-config": "workspace:^",
     "@types/dotenv": "^8.2.0",
+    "@types/node": "^22.13.0",
     "grammy": "^1.30.0",
+    "ioredis": "^5.4.2",
     "nodemon": "^3.1.0",
     "typeorm": "^0.3.20",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^8.22.0"
   },
   "dependencies": {
     "dotenv": "^16.4.5"

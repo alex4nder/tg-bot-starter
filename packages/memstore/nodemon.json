@@ -5,5 +5,5 @@
   ],
   "ext": ".ts,.js, .json",
   "ignore": [],
-  "exec": "tsc -b"
+  "exec": "tsc"
 }

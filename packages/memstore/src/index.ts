@@ -1,52 +1,44 @@
+/* eslint-disable @typescript-eslint/no-extraneous-class */
 import { config } from "@repo/config";
 import { logger } from "@repo/logger";
-import Redis, { RedisOptions } from "ioredis";
+import Redis from "ioredis";
 
 interface RedisSetOptions {
   key: string;
   value: string;
   ttl?: number;
+  expirationType?: string;
 }
 
 const { redisOptions } = config;
+export const redis = new Redis(redisOptions);
+
+enum EExpirationType {
+  EX = "EX",
+  PX = "PX",
+}
+
+async function initialize() {
+  if (redis.status === "ready") return;
+
+  await new Promise<void>((resolve) => {
+    redis.on("ready", resolve);
+  });
+}
 
 export default class MemStore {
-  private static redis: Redis;
+  static async set({
+    key,
+    value,
+    ttl,
+    expirationType = EExpirationType.EX,
+  }: RedisSetOptions): Promise<boolean> {
+    await initialize();
 
-  private static initialize() {
-    if (!this.redis) {
-      this.redis = new Redis({
-        ...(redisOptions as RedisOptions),
-        retryStrategy: this.retryStrategy,
-      });
-
-      this.initializeEventListeners();
-    }
-  }
-
-  private static initializeEventListeners() {
-    this.redis.on("connect", () => logger.info("Redis connected"));
-    this.redis.on("ready", () => logger.info("Redis connection is ready"));
-    this.redis.on("error", (error) =>
-      logger.error("Redis connection error:", error),
-    );
-  }
-
-  private static retryStrategy(times: number): number | null {
-    const delay = Math.min(times * 50, 2000);
-    if (times > 10) {
-      logger.error("Max retry attempts for Redis reached");
-      return null;
-    }
-    return delay;
-  }
-
-  static async set({ key, value, ttl }: RedisSetOptions): Promise<boolean> {
-    this.initialize();
     try {
-      ttl
-        ? await this.redis.setex(key, ttl, value)
-        : await this.redis.set(key, value);
+      const args: (string | number)[] = [key, value];
+      if (ttl) args.push(expirationType, ttl);
+      await redis.set(...(args as Parameters<typeof redis.set>));
       return true;
     } catch (error) {
       logger.error(`Error setting value in Redis for key "${key}":`, error);
@@ -54,33 +46,53 @@ export default class MemStore {
     }
   }
 
-  static async get<T>(key: string): Promise<T | null> {
-    this.initialize();
+  static async get<T>(key: string): Promise<T | string | null> {
+    await initialize();
+
+    const isJsonString = (str: string) => {
+      try {
+        JSON.parse(str);
+      } catch (error) {
+        logger.error(`Error parsing value from Redis for key "${key}":`, error);
+        return false;
+      }
+      return true;
+    };
+
     try {
-      const value = await this.redis.get(key);
-      return value ? JSON.parse(value) : null;
+      const value: string | null = await redis.get(key);
+      if (value) {
+        return isJsonString(value) ? (JSON.parse(value) as T) : value;
+      }
+      return null;
     } catch (error) {
-      logger.error("Error getting value from Redis:", error);
+      logger.error(`Error getting value from Redis for key "${key}":`, error);
       return null;
     }
   }
 
   static async del(key: string): Promise<boolean> {
-    this.initialize();
+    await initialize();
+
     try {
-      const result = await this.redis.del(key);
-      return result === 1;
+      const result = await redis.del(key);
+      return result > 0;
     } catch (error) {
-      logger.error("Error deleting value from Redis:", error);
+      logger.error(`Error deleting value from Redis for key "${key}":`, error);
       return false;
     }
   }
 
-  static async keys(pattern: string = "*"): Promise<string[]> {
-    this.initialize();
+  static async keys(pattern = "*"): Promise<string[]> {
+    await initialize();
+
     try {
-      const keys = await this.redis.keys(pattern);
-      return keys;
+      const prefix = redis.options.keyPrefix ?? "";
+      const prefixedPattern = `${prefix}${pattern}`;
+      const keys = await redis.keys(prefixedPattern);
+      return keys.map((key) =>
+        key.startsWith(prefix) ? key.slice(prefix.length) : key,
+      );
     } catch (error) {
       logger.error(
         `Error fetching keys with pattern "${pattern}" from Redis:`,
@@ -91,10 +103,11 @@ export default class MemStore {
   }
 
   static async exists(key: string): Promise<boolean> {
-    this.initialize();
+    await initialize();
+
     try {
-      const result = await this.redis.exists(key);
-      return result === 1;
+      const result = await redis.exists(key);
+      return result > 0;
     } catch (error) {
       logger.error(`Error checking existence of key "${key}" in Redis:`, error);
       return false;
@@ -102,9 +115,10 @@ export default class MemStore {
   }
 
   static async flushAll(): Promise<boolean> {
-    this.initialize();
+    await initialize();
+
     try {
-      await this.redis.flushall();
+      await redis.flushall();
       logger.info("All keys have been flushed from Redis");
       return true;
     } catch (error) {

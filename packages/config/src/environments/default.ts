@@ -1,29 +1,18 @@
-import { IConfig } from "../configuration.interface";
-import { RedisOptions } from "ioredis";
+import { getEnvVarOrThrow } from "../helpers";
+import { IConfig } from "../config.types";
 
-const appCode = "tg-bot-starter";
-
-const redisOptions: RedisOptions = {
-  host: "localhost",
-  port: 6379,
-};
-
-const appServerPort = 3001;
-
-export const fallback: IConfig = {
+export const defaultConfig: IConfig = {
   appName: "TG Bot Starter",
   appServer: {
-    port: appServerPort,
-    baseUrl: `http://localhost:${appServerPort}`,
+    port: 3001,
+    baseUrl: `http://localhost:3001`,
   },
   appClient: {
     baseUrl: "http://127.0.0.1:8080",
   },
   telegramBot: {
-    token: process.env["TG_BOT_TOKEN"] as string,
-    client: {
-      environment: "test",
-    },
+    token: getEnvVarOrThrow("TG_BOT_TOKEN"),
+    client: { environment: "test" },
   },
   typeOrmOptions: {
     type: "postgres",
@@ -35,9 +24,6 @@ export const fallback: IConfig = {
     schema: "dev",
     synchronize: false,
   },
-  redisOptions: {
-    ...redisOptions,
-    keyPrefix: `${appCode}:`,
-  },
-  bullMqOptions: redisOptions,
+  redisOptions: { host: "localhost", port: 6379, keyPrefix: "tg-bot-starter:" },
+  bullMqOptions: { host: "localhost", port: 6379 },
 };

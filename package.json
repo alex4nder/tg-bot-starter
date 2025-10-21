@@ -4,7 +4,7 @@
   "scripts": {
     "build": "turbo build",
     "dev": "turbo dev",
-    "lint": "turbo lint",
+    "lint": "yarn eslint '.'",
     "db:migration:generate": "yarn workspace @repo/db migration:generate",
     "db:migration:create": "yarn workspace @repo/db migration:create",
     "db:migration:run": "yarn workspace @repo/db migration:run",
@@ -12,10 +12,8 @@
     "db:migration:revert:all": "yarn workspace @repo/db migration:revert:all"
   },
   "devDependencies": {
+    "eslint": "^9.19.0",
     "turbo": "^2.1.1"
-  },
-  "dependencies": {
-    "bullmq": "^5.22.0"
   },
   "engines": {
     "node": ">=18"

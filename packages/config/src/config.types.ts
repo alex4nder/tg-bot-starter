@@ -1,6 +1,6 @@
 import { RedisOptions } from "ioredis";
-import { DataSourceOptions } from "typeorm";
-import { ApiClientOptions } from "grammy";
+import { DataSourceOptions as TypeOrmOptions } from "typeorm";
+import { ApiClientOptions as TelegramOptions } from "grammy";
 
 type BullMqOptions = Omit<RedisOptions, "keyPrefix">;
 
@@ -15,9 +15,9 @@ export interface IConfig {
   };
   telegramBot: {
     token: string;
-    client: ApiClientOptions;
+    client: TelegramOptions;
   };
-  typeOrmOptions: DataSourceOptions;
+  typeOrmOptions: TypeOrmOptions;
   redisOptions: RedisOptions;
   bullMqOptions: BullMqOptions;
 }

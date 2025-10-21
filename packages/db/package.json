@@ -4,7 +4,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "nodemon",
-    "build": "tsc -p tsconfig.build.json",
+    "build": "tsc",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js",
     "migration:generate": "tsc -b && typeorm migration:generate -d ./dist/index.js src/migration/$1",
     "migration:create": "typeorm migration:create src/migration/$1",
@@ -13,16 +13,15 @@
     "migration:revert:all": "tsc -b && typeorm migration:run -d ./dist/index.js"
   },
   "devDependencies": {
+    "@eslint/js": "^9.19.0",
     "@repo/config": "workspace:^",
-    "@repo/eslint-config": "workspace:^",
     "@repo/typescript-config": "workspace:^",
-    "@types/dotenv": "^8.2.0",
     "@types/node": "^20.12.7",
-    "dotenv": "^16.4.5",
     "nodemon": "^3.1.0",
     "sqlite3": "^5.1.7",
     "ts-node": "^10.9.2",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "typescript-eslint": "^8.22.0"
   },
   "dependencies": {
     "pg": "^8.13.0",

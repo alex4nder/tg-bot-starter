@@ -1,14 +1,15 @@
 {
   "compilerOptions": {
-    "allowArbitraryExtensions": false,
     "allowJs": true,
     "allowSyntheticDefaultImports": true,
     "allowUnreachableCode": false,
     "allowUnusedLabels": false,
-    "checkJs": true,
+    "checkJs": false,
     "declaration": true,
     "declarationMap": true,
+    "emitDecoratorMetadata": true,
     "exactOptionalPropertyTypes": true,
+    "experimentalDecorators": true,
     "esModuleInterop": true,
     "incremental": false,
     "module": "CommonJS",
@@ -23,12 +24,10 @@
     "resolveJsonModule": true,
     "sourceMap": true,
     "strict": true,
+    "strictPropertyInitialization": false,
     "target": "ES6",
     "useUnknownInCatchVariables": true,
     "skipLibCheck": true,
-    "experimentalDecorators": true,
-    "emitDecoratorMetadata": true,
-    "strictPropertyInitialization": false,
-    "noEmitOnError": true
+    "types": ["node"]
   }
 }

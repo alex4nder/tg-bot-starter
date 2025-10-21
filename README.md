@@ -23,7 +23,6 @@ This repo includes the following packages/apps:
 - `@repo/axios-wrapper`: a wrapper around the `Axios` library for convenient logging and error handling in HTTP requests.
 - `@repo/config`: centralized configuration management to streamline environment variables and settings.
 - `@repo/memstore`: simplified interface for working with `Redis`.
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
 - `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
 
 ### Utilities
@@ -38,18 +37,18 @@ This repo has some additional tools already setup for you:
 
 ### Clone the Repository
 ```bash
-   git clone <repository-url>
-   cd <repository-directory>
+git clone <repository-url>
+cd <repository-directory>
 ```
 
 ### Install Dependencies
 ```bash
-   yarn install
+yarn install
 ```
 
 ### Settings environment variables
 ```bash
-   TG_BOT_TOKEN=<token>
+TG_BOT_TOKEN=<token>
 ```
 
 ### Build

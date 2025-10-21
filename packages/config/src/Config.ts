@@ -1,12 +1,13 @@
-import { IConfig } from "./configuration.interface";
+import { getEnvVar } from "./helpers";
+import { IConfig } from "./config.types";
 import * as environments from "./environments";
 
 export class Config {
   private readonly config: IConfig;
 
   constructor() {
-    const config: IConfig = environments.fallback;
-    const env = process.env["NODE_ENV"] ?? "development";
+    const config: IConfig = environments.defaultConfig;
+    const env = getEnvVar("NODE_ENV") ?? "development";
 
     if (Object.keys(environments).includes(env)) {
       this.config = {
