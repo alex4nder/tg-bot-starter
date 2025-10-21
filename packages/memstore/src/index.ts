@@ -18,6 +18,11 @@ enum EExpirationType {
   PX = "PX",
 }
 
+/**
+ * Waits until the shared Redis client reports the "ready" state.
+ *
+ * If the client is already ready, completes immediately; otherwise waits for the client's "ready" event before finishing.
+ */
 async function initialize() {
   if (redis.status === "ready") return;
 
